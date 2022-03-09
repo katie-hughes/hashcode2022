@@ -24,8 +24,6 @@ class Project:
 		print(f'Skills Needed: {self.skills}')
 		print()
 
-#Project()
-
 
 class Contributor:
 	def __init__(self, name, skills):
@@ -39,8 +37,12 @@ class Contributor:
 
 ## PARSING
 
-#fname = 'a_an_example.in.txt'
-fname = 'b_better_start_small.in.txt'
+fname = 'a_an_example.in.txt'
+#fname = 'b_better_start_small.in.txt'
+#fname = 'c_collaboration.in.txt'
+#fname = 'd_dense_schedule.in.txt'
+#fname = 'e_exceptional_skills.in.txt'
+#fname = 'f_find_great_mentors.in.txt'
 
 contributor_list = []
 project_list = []
@@ -115,17 +117,18 @@ def find_people(project, clist):
 	skills = project.skills
 	team = []
 	team_dict = {}
-	for s in skills:
+	for s in skills: #every skill in project must be accounted for
 		required_level = skills[s]
 		found = False
 		for c in clist:
 			c_skills = c.skills
-			if s in c_skills:
-				if c_skills[s] >= required_level:
-					team.append(c)
-					team_dict[c] = [s, required_level,c_skills[s]]
-					found = True
-					break
+			if s in c_skills: # must have right skill
+				if c_skills[s] >= required_level: # skill must be high enough
+					if c not in team: # same person cant be in twice
+						team.append(c)
+						team_dict[c] = [s, required_level,c_skills[s]]
+						found = True
+						break
 		if not found:
 			return ([], {})
 	for c in team:
@@ -134,30 +137,52 @@ def find_people(project, clist):
 	return (team, team_dict)
 
 
+def score(p, completed_day):
+	if p.deadline >= completed_day:
+		print(f"Full points: {p.score}")
+		return p.score
+	else:
+		points_off = completed_day - p.deadline
+		s = p.score - points_off
+		print(f"Reduced score {s}/{p.score}")
+		if s>=0:
+			return s
+		else:
+			return 0
+
+
 print("\n\n TEST \n \n ")
 
 returning = {}
 return_dates = []
+cumulative_score = 0
 d = 0
 while d<final_day:
-	print(f"\nDay {d}")
+	print(f"\nDay {d}/{final_day}")
 	if d in returning:
 		for team in returning[d]:
-			print(f"re adding team {team}")
+			print("re adding team of", end=' ')
+			for c in team:
+				print(c.name, end=' ')
+			print()
 			contributor_list += team
 		return_dates = list(filter(lambda x: x != d, return_dates))
 	project_list_copy = list(project_list)
 	for p in project_list:
-		print(p.name)
 		team, team_dict = find_people(p, contributor_list)
 		if not len(team):
-			print('team not found :(')
+			pass
+			#print('team not found :(')
 		else:
-			print("team found yay!")
+			print(f"team found for {p.name} yay!")
 			project_list_copy.remove(p)
 			for c in team:
 				# contributor cant work on other projects for now
-				contributor_list.remove(c)
+				try:
+					contributor_list.remove(c)
+				except:
+					print(f"{c.name} isnt in contributor list???")
+					exit()
 				# increment their skill if need be
 				skill = team_dict[c][0]
 				p_level = team_dict[c][1]
@@ -172,6 +197,8 @@ while d<final_day:
 				returning[return_date] = []
 			returning[return_date].append(team)
 			return_dates.append(return_date)
+			p_score = score(p, return_date)
+			cumulative_score += p_score
 	## incrememtn the date to the nearest returning date
 	project_list = project_list_copy
 	if not len(return_dates):
@@ -183,3 +210,17 @@ while d<final_day:
 
 
 print("ALL DONE")
+projects_left = len(project_list)
+print(f"{projects_left} projects left over")
+print(f"{cumulative_score} final score")
+
+a_score =  33
+b_score =  1239388
+c_score =  82060
+d_score =  3018380
+e_score =  2657657
+f_score =  2979645
+
+finalscore = a_score + b_score + c_score + d_score + e_score + f_score
+
+print(f"FINALSCORE {finalscore}")
