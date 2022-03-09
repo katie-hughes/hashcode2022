@@ -15,6 +15,8 @@ class Project:
 		self.skills = skills
 		# urgent if: high score, small days to complete, small best before
 		self.urgency = score/(deadline*days)
+		# track the last day this project will receive points
+		self.lastday = score + deadline
 	def pprint(self):
 		print(f'PROJECT NAME: {self.name}')
 		print(f'Days to Complete: {self.days}')
@@ -43,6 +45,10 @@ fname = 'a_an_example.in.txt'
 #fname = 'd_dense_schedule.in.txt'
 #fname = 'e_exceptional_skills.in.txt'
 #fname = 'f_find_great_mentors.in.txt'
+
+
+solution_fname = 'sol_'+fname
+solution = open(solution_fname, 'w')
 
 contributor_list = []
 project_list = []
@@ -80,7 +86,10 @@ with open(fname) as f:
 			index += 1
 			skill_name = (lines[index]).split()[0]
 			skill_level = int((lines[index]).split()[1])
-			skills_needed[skill_name] = skill_level
+			skills_needed[r] = (skill_name, skill_level)
+			#if skill_name not in skills_needed:
+			#	skills_needed[skill_name] = []
+			#skills_needed[skill_name].append(skill_level)
 		pclass = Project(project_name, days, score, best_before, number_roles, skills_needed)
 		project_list.append(pclass)
 		index += 1
@@ -117,8 +126,9 @@ def find_people(project, clist):
 	skills = project.skills
 	team = []
 	team_dict = {}
-	for s in skills: #every skill in project must be accounted for
-		required_level = skills[s]
+	for n in skills: #every skill in project must be accounted for
+		s = skills[n][0]
+		required_level = skills[n][1]
 		found = False
 		for c in clist:
 			c_skills = c.skills
@@ -131,9 +141,6 @@ def find_people(project, clist):
 						break
 		if not found:
 			return ([], {})
-	for c in team:
-		print(c.name, end=' ')
-	print()
 	return (team, team_dict)
 
 
@@ -150,11 +157,25 @@ def score(p, completed_day):
 		else:
 			return 0
 
+removed = 0
+
+def filter_project_list(plist, day):
+	cpy = list(plist)
+	for p in plist:
+		if p.lastday < day:
+			print(f"Removing project {p.name}")
+			cpy.remove(p)
+			global removed
+			removed += 1
+	return cpy
+
+
 
 print("\n\n TEST \n \n ")
 
 returning = {}
 return_dates = []
+completed = 0
 cumulative_score = 0
 d = 0
 while d<final_day:
@@ -167,6 +188,7 @@ while d<final_day:
 			print()
 			contributor_list += team
 		return_dates = list(filter(lambda x: x != d, return_dates))
+	project_list = filter_project_list(project_list, d)
 	project_list_copy = list(project_list)
 	for p in project_list:
 		team, team_dict = find_people(p, contributor_list)
@@ -176,6 +198,12 @@ while d<final_day:
 		else:
 			print(f"team found for {p.name} yay!")
 			project_list_copy.remove(p)
+			solution.write(p.name+'\n')
+			for c in team:
+				print(c.name, end=' ')
+				solution.write(c.name+' ')
+			solution.write('\n')
+			print()
 			for c in team:
 				# contributor cant work on other projects for now
 				try:
@@ -190,6 +218,7 @@ while d<final_day:
 				if c_level <= p_level:
 					print(f"Incrementing skill {skill} for {c.name}")
 					c.skills[skill] += 1
+			print()
 			# keep track of what day they should be put back in
 			return_date = d + p.days
 			print(f"return date is {return_date}")
@@ -199,6 +228,7 @@ while d<final_day:
 			return_dates.append(return_date)
 			p_score = score(p, return_date)
 			cumulative_score += p_score
+			completed += 1
 	## incrememtn the date to the nearest returning date
 	project_list = project_list_copy
 	if not len(return_dates):
@@ -211,16 +241,27 @@ while d<final_day:
 
 print("ALL DONE")
 projects_left = len(project_list)
+print(f"{completed} projects completed")
 print(f"{projects_left} projects left over")
+print(f"{removed} projects removed")
 print(f"{cumulative_score} final score")
 
 a_score =  33
-b_score =  1239388
-c_score =  82060
-d_score =  3018380
-e_score =  2657657
-f_score =  2979645
+b_score =  743841
+c_score =  82556
+d_score =  133020
+e_score =  1606532
+f_score =  538623
 
 finalscore = a_score + b_score + c_score + d_score + e_score + f_score
 
 print(f"FINALSCORE {finalscore}")
+# 10246205
+
+solution.close()
+
+solution = open(solution_fname, 'r+')
+content = solution.read()
+solution.seek(0)
+solution.write(str(completed)+'\n'+content)
+solution.close()
